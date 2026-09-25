@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# ML artifacts
+ml/models_store/*.pkl
+ml/models_store/*.joblib
+ml/models_store/*.bin
+!ml/models_store/README.md
+
+# DB
+*.sqlite3
+
+# OS
+.DS_Store

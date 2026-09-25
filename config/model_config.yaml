@@ -1,0 +1,23 @@
+llm:
+  provider: "ollama"
+  base_url: "http://localhost:11434/v1"
+  model: "llama3.1:8b"
+  temperature: 0.1
+  max_tokens: 1024
+  timeout_seconds: 30
+  fallback_to_heuristic: true
+
+embedding:
+  provider: "local"
+  model_name: "all-MiniLM-L6-v2"
+  dimensions: 384
+  batch_size: 32
+
+qdrant:
+  url: "http://localhost:6333"
+  collection: "failure_embeddings"
+  local_storage_path: "./qdrant_storage"
+  distance: "Cosine"
+
+cold_start:
+  min_real_samples: 200

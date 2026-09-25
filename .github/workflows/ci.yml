@@ -1,0 +1,19 @@
+# Sample workflow for the target GitHub repo — emits JUnit XML the log_normalizer consumes,
+# and lets the ingestion adapter pull run/job logs via the GitHub API.
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up environment
+        run: echo "TODO: language/runtime setup for the sample app"
+      - name: Run tests
+        run: echo "TODO: pytest --junitxml=results/junit.xml  (or jest/junit equivalent)"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: results/

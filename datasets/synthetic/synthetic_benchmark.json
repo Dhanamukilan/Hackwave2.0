@@ -1,0 +1,111 @@
+{
+  "benchmark_name": "AG004 Synthetic CI/CD Failure Benchmark",
+  "version": "1.0",
+  "description": "Ground truth labeled failure logs across 10 classification categories for cold-start evaluation",
+  "min_real_samples_threshold": 200,
+  "samples_count": 50,
+  "categories": [
+    "REGRESSION",
+    "FLAKY_TEST",
+    "INFRASTRUCTURE",
+    "ENVIRONMENT",
+    "DEPENDENCY",
+    "NETWORK",
+    "TIMEOUT",
+    "BUILD_FAILURE",
+    "TEST_DATA",
+    "UNKNOWN"
+  ],
+  "samples": [
+    {
+      "id": "syn-01",
+      "error_type": "AssertionError",
+      "message": "assert response.status_code == 200, expected 200 got 500",
+      "stack_trace": "File \"backend/services/payment.py\", line 88, in process_payment\nassert response.status_code == 200",
+      "ground_truth_classification": "REGRESSION",
+      "ground_truth_flaky": false,
+      "severity": "CRITICAL"
+    },
+    {
+      "id": "syn-02",
+      "error_type": "TimeoutException",
+      "message": "element '#checkout-btn' not clickable after 5000ms",
+      "stack_trace": "File \"e2e/test_checkout.py\", line 45, in test_checkout_flow\nwait.until(element_to_be_clickable)",
+      "ground_truth_classification": "FLAKY_TEST",
+      "ground_truth_flaky": true,
+      "severity": "LOW"
+    },
+    {
+      "id": "syn-03",
+      "error_type": "RunnerDiedError",
+      "message": "Process killed by OOMKiller (exit code 137). Memory cgroup limit exceeded.",
+      "stack_trace": "runner agent terminated abruptly during build stage",
+      "ground_truth_classification": "INFRASTRUCTURE",
+      "ground_truth_flaky": false,
+      "severity": "HIGH"
+    },
+    {
+      "id": "syn-04",
+      "error_type": "EnvironmentError",
+      "message": "Missing required environment variable STRIPE_API_KEY",
+      "stack_trace": "File \"backend/core/config.py\", line 34, in get_stripe_key\nraise EnvironmentError('Missing STRIPE_API_KEY')",
+      "ground_truth_classification": "ENVIRONMENT",
+      "ground_truth_flaky": false,
+      "severity": "HIGH"
+    },
+    {
+      "id": "syn-05",
+      "error_type": "ConnectionRefusedError",
+      "message": "Failed to connect to redis-master.production:6379: Connection refused",
+      "stack_trace": "File \"backend/services/cache.py\", line 15, in get_client\nredis.connect()",
+      "ground_truth_classification": "NETWORK",
+      "ground_truth_flaky": false,
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "syn-06",
+      "error_type": "ModuleNotFoundError",
+      "message": "No module named 'cryptography.hazmat.bindings._rust'",
+      "stack_trace": "File \"backend/core/security.py\", line 4, in <module>\nimport cryptography",
+      "ground_truth_classification": "DEPENDENCY",
+      "ground_truth_flaky": false,
+      "severity": "HIGH"
+    },
+    {
+      "id": "syn-07",
+      "error_type": "IntegrityError",
+      "message": "duplicate key value violates unique constraint 'users_email_key'",
+      "stack_trace": "File \"tests/test_users.py\", line 28, in test_create_user\ndb.session.commit()",
+      "ground_truth_classification": "TEST_DATA",
+      "ground_truth_flaky": false,
+      "severity": "LOW"
+    },
+    {
+      "id": "syn-08",
+      "error_type": "SyntaxError",
+      "message": "invalid syntax in pipeline definition: unexpected token '<<<'",
+      "stack_trace": "File \"backend/api/auth.py\", line 12, in <module>\n<<<<<<< HEAD",
+      "ground_truth_classification": "BUILD_FAILURE",
+      "ground_truth_flaky": false,
+      "severity": "HIGH"
+    },
+    {
+      "id": "syn-09",
+      "error_type": "TimeoutError",
+      "message": "Job timed out after exceeding 3600 seconds",
+      "stack_trace": "ci runner killed job test-matrix",
+      "ground_truth_classification": "TIMEOUT",
+      "ground_truth_flaky": false,
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "syn-10",
+      "error_type": "UnknownError",
+      "message": "Runner exited with abnormal code 255",
+      "stack_trace": "unhandled signal received from host OS",
+      "ground_truth_classification": "UNKNOWN",
+      "ground_truth_flaky": false,
+      "severity": "NORMAL"
+    }
+  ]
+}

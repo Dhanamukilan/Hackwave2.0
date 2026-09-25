@@ -1,0 +1,52 @@
+components:
+  - id: "comp-auth"
+    name: "Authentication & Authorization"
+    paths:
+      - "backend/app/core/security.py"
+      - "backend/app/api/auth.py"
+      - "backend/app/middleware/auth.py"
+    owner_id: "team-security"
+    owner_name: "Security Engineering"
+    owner_email: "security-team@example.com"
+
+  - id: "comp-api"
+    name: "Core API & Routing"
+    paths:
+      - "backend/app/api/"
+      - "backend/app/schemas/"
+    owner_id: "team-backend"
+    owner_name: "Backend Core Team"
+    owner_email: "backend-core@example.com"
+
+  - id: "comp-ingestion"
+    name: "CI/CD Ingestion & Webhooks"
+    paths:
+      - "ingestion/"
+      - "backend/app/api/webhooks.py"
+    owner_id: "team-devops"
+    owner_name: "DevOps & Tooling Team"
+    owner_email: "devops-tooling@example.com"
+
+  - id: "comp-ml"
+    name: "ML & Flaky Test Prediction"
+    paths:
+      - "ml/"
+    owner_id: "team-ml"
+    owner_name: "AI & ML Systems Team"
+    owner_email: "ml-systems@example.com"
+
+  - id: "comp-agents"
+    name: "Agentic RCA & Remediation"
+    paths:
+      - "agents/"
+    owner_id: "team-agentic"
+    owner_name: "Applied AI Platform Team"
+    owner_email: "applied-ai@example.com"
+
+  - id: "comp-frontend"
+    name: "Developer Dashboard UI"
+    paths:
+      - "frontend/"
+    owner_id: "team-frontend"
+    owner_name: "Frontend Platform Team"
+    owner_email: "frontend-platform@example.com"
