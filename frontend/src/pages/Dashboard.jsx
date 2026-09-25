@@ -184,6 +184,7 @@ export function Dashboard({ onSelectFailure, onNavigateTab }) {
               <thead className="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[11px]">
                 <tr>
                   <th className="py-2.5">Error Type</th>
+                  <th className="py-2.5">CI Source</th>
                   <th className="py-2.5">Classification</th>
                   <th className="py-2.5">Severity</th>
                   <th className="py-2.5">Scores</th>
@@ -193,7 +194,7 @@ export function Dashboard({ onSelectFailure, onNavigateTab }) {
               <tbody className="divide-y divide-slate-800/60 font-mono">
                 {failures.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-6 text-center text-slate-400 font-sans">
+                    <td colSpan={6} className="py-6 text-center text-slate-400 font-sans">
                       No failure records in database. Ingest a test execution to begin triage.
                     </td>
                   </tr>
@@ -205,6 +206,11 @@ export function Dashboard({ onSelectFailure, onNavigateTab }) {
                         <div className="text-[11px] text-slate-400 truncate max-w-xs font-sans">
                           {f.normalized_message}
                         </div>
+                      </td>
+                      <td className="py-3">
+                        <Badge variant={f.ci_provider || 'github_actions'}>
+                          {f.ci_provider === 'jenkins' ? 'Jenkins' : 'GitHub Actions'}
+                        </Badge>
                       </td>
                       <td className="py-3">
                         <Badge variant={f.classification}>{f.classification}</Badge>

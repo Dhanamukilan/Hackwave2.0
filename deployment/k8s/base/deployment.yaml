@@ -1,4 +1,105 @@
 apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ag004-postgres
+  labels:
+    app: ag004
+    component: postgres
+spec:
+  serviceName: ag004-postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ag004
+      component: postgres
+  template:
+    metadata:
+      labels:
+        app: ag004
+        component: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          envFrom:
+            - configMapRef:
+                name: ag004-config
+            - secretRef:
+                name: ag004-secrets
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "ag004", "-d", "ag004"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "ag004", "-d", "ag004"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ag004-qdrant
+  labels:
+    app: ag004
+    component: qdrant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ag004
+      component: qdrant
+  template:
+    metadata:
+      labels:
+        app: ag004
+        component: qdrant
+    spec:
+      containers:
+        - name: qdrant
+          image: qdrant/qdrant:v1.8.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6333
+              name: http
+            - containerPort: 6334
+              name: grpc
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 6333
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 6333
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: qdrantdata
+              mountPath: /qdrant/storage
+      volumes:
+        - name: qdrantdata
+          emptyDir: {}
+---
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ag004-backend
@@ -23,20 +124,23 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
+              name: http
           envFrom:
             - configMapRef:
                 name: ag004-config
+            - secretRef:
+                name: ag004-secrets
           readinessProbe:
             httpGet:
-              path: /health
+              path: /docs
               port: 8000
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /docs
               port: 8000
-            initialDelaySeconds: 15
+            initialDelaySeconds: 20
             periodSeconds: 20
 ---
 apiVersion: apps/v1
@@ -64,3 +168,9 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5173
+              name: http
+          readinessProbe:
+            tcpSocket:
+              port: 5173
+            initialDelaySeconds: 5
+            periodSeconds: 10

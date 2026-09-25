@@ -29,6 +29,8 @@ class FailureResponse(BaseModel):
     flakiness_score: float
     regression_prob: float
     severity: SeverityLevel
+    ci_provider: Optional[str] = "github_actions"
+    pipeline_name: Optional[str] = "CI"
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 

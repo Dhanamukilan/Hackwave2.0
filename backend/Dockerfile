@@ -7,14 +7,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code, models, ingestion, and config
+# Copy repository source code
 COPY . .
+
+ENV PYTHONPATH=/app
 
 EXPOSE 8000
 

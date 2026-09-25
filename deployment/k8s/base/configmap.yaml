@@ -5,11 +5,12 @@ metadata:
   labels:
     app: ag004
 data:
-  POSTGRES_HOST: "postgres-service"
+  POSTGRES_HOST: "ag004-postgres-service"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "ag004"
   POSTGRES_USER: "ag004"
-  QDRANT_URL: "http://qdrant-service:6333"
-  LLM_BASE_URL: "http://ollama-service:11434/v1"
+  DATABASE_URL: "postgresql://ag004:changeme@ag004-postgres-service:5432/ag004"
+  QDRANT_URL: "http://ag004-qdrant-service:6333"
+  LLM_BASE_URL: "http://ag004-ollama-service:11434/v1"
   LLM_MODEL: "llama3.1:8b"
   MIN_REAL_SAMPLES: "200"

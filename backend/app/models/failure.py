@@ -49,6 +49,18 @@ class Failure(Base):
     fingerprint = relationship("Fingerprint", back_populates="failures")
     investigations = relationship("Investigation", back_populates="failure", cascade="all, delete-orphan")
 
+    @property
+    def ci_provider(self) -> str:
+        if self.test_run and self.test_run.build and self.test_run.build.pipeline:
+            return self.test_run.build.pipeline.provider or "github_actions"
+        return "github_actions"
+
+    @property
+    def pipeline_name(self) -> str:
+        if self.test_run and self.test_run.build and self.test_run.build.pipeline:
+            return self.test_run.build.pipeline.name or "CI"
+        return "CI"
+
 class Prediction(Base):
     __tablename__ = "predictions"
 

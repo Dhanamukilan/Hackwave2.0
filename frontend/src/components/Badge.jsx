@@ -39,6 +39,10 @@ export function Badge({ children, variant = 'default', size = 'sm' }) {
     DEVELOPER: "bg-sky-900/40 text-sky-200 border-sky-700",
     VIEWER: "bg-slate-800 text-slate-300 border-slate-700",
 
+    // CI Providers
+    github_actions: "bg-sky-950/60 text-sky-300 border-sky-800",
+    jenkins: "bg-amber-950/60 text-amber-300 border-amber-800",
+
     default: "bg-slate-800 text-slate-300 border-slate-700"
   };
 

@@ -50,7 +50,8 @@ class IngestionService:
         branch: str,
         test_case_records: List[Dict[str, Any]],
         runner_os: str = "ubuntu-latest",
-        runner_version: str = "22.04"
+        runner_version: str = "22.04",
+        provider: str = "github_actions"
     ) -> Dict[str, Any]:
         """
         Processes a full batch of executed test cases for a build run,
@@ -75,8 +76,8 @@ class IngestionService:
             pipeline = Pipeline(
                 repository_id=repo.id,
                 name=pipeline_name,
-                workflow_path=f".github/workflows/{pipeline_name.lower().replace(' ', '_')}.yml",
-                provider="github_actions"
+                workflow_path=f".github/workflows/{pipeline_name.lower().replace(' ', '_')}.yml" if provider == "github_actions" else f"Jenkinsfile/{pipeline_name}",
+                provider=provider
             )
             self.db.add(pipeline)
             self.db.flush()

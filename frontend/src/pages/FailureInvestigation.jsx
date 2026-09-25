@@ -102,7 +102,10 @@ export function FailureInvestigation({ selectedFailureId, onNavigateToRCA }) {
                   >
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <span className="font-semibold text-xs text-slate-200 line-clamp-1">{f.error_type}</span>
-                      <Badge variant={f.severity}>{f.severity}</Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant={f.ci_provider || 'github_actions'}>{f.ci_provider === 'jenkins' ? 'Jenkins' : 'GitHub'}</Badge>
+                        <Badge variant={f.severity}>{f.severity}</Badge>
+                      </div>
                     </div>
                     <div className="text-[11px] text-slate-400 line-clamp-2 mb-2 font-mono">
                       {f.normalized_message}
@@ -128,6 +131,9 @@ export function FailureInvestigation({ selectedFailureId, onNavigateToRCA }) {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h2 className="text-xl font-bold text-white">{currentFailure.error_type}</h2>
+                      <Badge variant={currentFailure.ci_provider || 'github_actions'}>
+                        {currentFailure.ci_provider === 'jenkins' ? 'Jenkins CI' : 'GitHub Actions CI'}
+                      </Badge>
                       <Badge variant={currentFailure.severity}>{currentFailure.severity}</Badge>
                     </div>
                     <p className="text-xs text-slate-400 font-mono">Failure ID: {currentFailure.id}</p>
