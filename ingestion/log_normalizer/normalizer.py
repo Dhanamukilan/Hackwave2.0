@@ -22,8 +22,9 @@ SECRET_TOKEN_PATTERNS = [
 ]
 
 ERROR_PATTERN = re.compile(
-    r"(?:(?P<error_type>[A-Za-z]+(?:Error|Exception|Failure|Fault|Timeout))\s*:\s*(?P<msg>[^\n\r]+))|"
+    r"(?:(?P<error_type>[A-Za-z]+(?:Error|Exception|Failure|Fault|Timeout))(?:\s*\[[^\]]+\])?\s*:\s*(?P<msg>[^\n\r]+))|"
     r"(?:FAILED\s+(?P<pytest_file>[^\s\:]+)(?:::(?P<pytest_test>[^\s]+))?\s*-\s*(?P<pytest_msg>[^\n\r]+))|"
+    r"(?:(?P<timeout_error>test timed out[^\n\r]*))|"
     r"(?:FAIL:\s*(?P<test_name>[^\s]+)\s*\((?P<test_suite>[^\)]+)\))"
 )
 
@@ -96,6 +97,9 @@ def extract_error_signature(log_text: str) -> Dict[str, Any]:
             message = groups["pytest_msg"].strip()
             if groups.get("pytest_file"):
                 location = f"{groups['pytest_file']}::{groups.get('pytest_test', '')}"
+        elif groups.get("timeout_error"):
+            error_type = "TimeoutError"
+            message = groups["timeout_error"].strip()
         elif groups.get("test_name"):
             error_type = "UnitTestFailure"
             message = f"{groups['test_name']} in {groups.get('test_suite')}"

@@ -47,16 +47,18 @@ async def github_webhook(
         commit_sha = wf_run.get("head_sha")
         branch = wf_run.get("head_branch")
         repo_name = payload_json.get("repository", {}).get("name", settings.GITHUB_REPO_NAME)
+        repo_owner = payload_json.get("repository", {}).get("owner", {}).get("login", settings.GITHUB_REPO_OWNER)
         wf_name = wf_run.get("name", "CI")
 
         if run_status == "completed":
-            logger.info(f"Triggering ingestion for completed workflow run {run_id} ({wf_name}) on commit {commit_sha}")
+            logger.info(f"Triggering ingestion for completed workflow run {run_id} ({wf_name}) on commit {commit_sha} in {repo_owner}/{repo_name}")
             ingest_details = github_actions_adapter.ingest_workflow_run(
                 db=db,
                 run_id=run_id,
                 commit_sha=commit_sha,
                 branch=branch,
                 repo_name=repo_name,
+                repo_owner=repo_owner,
                 workflow_name=wf_name
             )
 
@@ -67,11 +69,13 @@ async def github_webhook(
             run_id = str(check.get("id"))
             commit_sha = check.get("head_sha")
             repo_name = payload_json.get("repository", {}).get("name", settings.GITHUB_REPO_NAME)
+            repo_owner = payload_json.get("repository", {}).get("owner", {}).get("login", settings.GITHUB_REPO_OWNER)
             ingest_details = github_actions_adapter.ingest_workflow_run(
                 db=db,
                 run_id=run_id,
                 commit_sha=commit_sha,
                 repo_name=repo_name,
+                repo_owner=repo_owner,
                 workflow_name=check.get("name", "Check")
             )
 

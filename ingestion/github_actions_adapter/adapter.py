@@ -38,9 +38,14 @@ class GitHubActionsAdapter(CIAdapter):
         if self.token:
             self.headers["Authorization"] = f"Bearer {self.token}"
 
-    def fetch_workflow_runs(self, per_page: int = 10) -> List[Dict[str, Any]]:
+    def _base_url(self, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> str:
+        owner = repo_owner or self.owner
+        repo = repo_name or self.repo
+        return f"https://api.github.com/repos/{owner}/{repo}"
+
+    def fetch_workflow_runs(self, per_page: int = 10, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> List[Dict[str, Any]]:
         """Fetches recent workflow runs from GitHub Actions REST API."""
-        url = f"{self.base_url}/actions/runs?per_page={per_page}"
+        url = f"{self._base_url(repo_name, repo_owner)}/actions/runs?per_page={per_page}"
         if not self.token:
             return []
         try:
@@ -52,9 +57,10 @@ class GitHubActionsAdapter(CIAdapter):
             logger.error(f"GitHub API error fetching workflow runs: {e}")
             return []
 
-    def fetch_workflow_run(self, run_id: str) -> Dict[str, Any]:
+    def fetch_workflow_run(self, run_id: str, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> Dict[str, Any]:
         """Fetches workflow run metadata from GitHub Actions REST API."""
-        url = f"{self.base_url}/actions/runs/{run_id}"
+        base = self._base_url(repo_name, repo_owner)
+        url = f"{base}/actions/runs/{run_id}"
         if not self.token:
             logger.info("No GitHub token configured. Returning mock workflow run.")
             return {
@@ -76,9 +82,10 @@ class GitHubActionsAdapter(CIAdapter):
             logger.error(f"GitHub API error fetching run {run_id}: {e}")
             return {"id": run_id, "status": "unknown", "error": str(e)}
 
-    def fetch_run_jobs(self, run_id: str) -> List[Dict[str, Any]]:
+    def fetch_run_jobs(self, run_id: str, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> List[Dict[str, Any]]:
         """Fetches all jobs associated with a workflow run."""
-        url = f"{self.base_url}/actions/runs/{run_id}/jobs"
+        base = self._base_url(repo_name, repo_owner)
+        url = f"{base}/actions/runs/{run_id}/jobs"
         if not self.token:
             return [{
                 "id": f"job-{run_id}-1",
@@ -97,9 +104,10 @@ class GitHubActionsAdapter(CIAdapter):
             logger.error(f"GitHub API error fetching jobs for run {run_id}: {e}")
             return []
 
-    def fetch_job_logs(self, job_id: str) -> str:
+    def fetch_job_logs(self, job_id: str, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> str:
         """Fetches console logs for a specific job."""
-        url = f"{self.base_url}/actions/jobs/{job_id}/logs"
+        base = self._base_url(repo_name, repo_owner)
+        url = f"{base}/actions/jobs/{job_id}/logs"
         if not self.token:
             return (
                 "2026-09-24T20:10:00.0000000Z ##[section]Starting: Test execution\n"
@@ -117,9 +125,10 @@ class GitHubActionsAdapter(CIAdapter):
             logger.error(f"GitHub API error fetching logs for job {job_id}: {e}")
             return f"Error fetching logs: {e}"
 
-    def fetch_run_artifacts(self, run_id: str) -> List[Dict[str, Any]]:
+    def fetch_run_artifacts(self, run_id: str, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> List[Dict[str, Any]]:
         """Lists build artifacts produced by a workflow run."""
-        url = f"{self.base_url}/actions/runs/{run_id}/artifacts"
+        base = self._base_url(repo_name, repo_owner)
+        url = f"{base}/actions/runs/{run_id}/artifacts"
         if not self.token:
             return []
         try:
@@ -131,7 +140,7 @@ class GitHubActionsAdapter(CIAdapter):
             logger.error(f"GitHub API error listing artifacts for run {run_id}: {e}")
             return []
 
-    def download_and_extract_junit_artifact(self, run_id: str) -> Optional[List[Dict[str, Any]]]:
+    def download_and_extract_junit_artifact(self, run_id: str, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> Optional[List[Dict[str, Any]]]:
         """
         Attempts to find and download a test results artifact (e.g. 'test-results' or '*.xml'),
         extracting and parsing JUnit XML test case records.
@@ -139,7 +148,7 @@ class GitHubActionsAdapter(CIAdapter):
         if not self.token:
             return None
 
-        artifacts = self.fetch_run_artifacts(run_id)
+        artifacts = self.fetch_run_artifacts(run_id, repo_name=repo_name, repo_owner=repo_owner)
         if not artifacts:
             return None
 
@@ -234,9 +243,10 @@ class GitHubActionsAdapter(CIAdapter):
 
         return cases
 
-    def fetch_commit_details(self, commit_sha: str) -> Dict[str, Any]:
+    def fetch_commit_details(self, commit_sha: str, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> Dict[str, Any]:
         """Fetches commit metadata, author details, and file diffs."""
-        url = f"{self.base_url}/commits/{commit_sha}"
+        base = self._base_url(repo_name, repo_owner)
+        url = f"{base}/commits/{commit_sha}"
         if not self.token:
             return {
                 "sha": commit_sha,
@@ -264,9 +274,10 @@ class GitHubActionsAdapter(CIAdapter):
             logger.error(f"GitHub API error fetching commit {commit_sha}: {e}")
             return {"sha": commit_sha, "error": str(e)}
 
-    def trigger_rerun(self, run_id: str) -> Dict[str, Any]:
+    def trigger_rerun(self, run_id: str, repo_name: Optional[str] = None, repo_owner: Optional[str] = None) -> Dict[str, Any]:
         """Triggers a rerun of failed jobs for a workflow run."""
-        url = f"{self.base_url}/actions/runs/{run_id}/rerun-failed-jobs"
+        base = self._base_url(repo_name, repo_owner)
+        url = f"{base}/actions/runs/{run_id}/rerun-failed-jobs"
         if not self.token:
             logger.info(f"Simulating rerun of failed jobs for run {run_id}")
             return {"status": "accepted", "message": "Simulated re-run triggered successfully"}
@@ -287,7 +298,8 @@ class GitHubActionsAdapter(CIAdapter):
         commit_sha: Optional[str] = None,
         branch: Optional[str] = None,
         repo_name: Optional[str] = None,
-        workflow_name: Optional[str] = None
+        workflow_name: Optional[str] = None,
+        repo_owner: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Complete end-to-end ingestion orchestrator for a GitHub Actions workflow run:
@@ -298,11 +310,12 @@ class GitHubActionsAdapter(CIAdapter):
         5. Automatically launches TriageOrchestrator for detected failures.
         """
         repo_name = repo_name or self.repo
+        repo_owner = repo_owner or self.owner
         workflow_name = workflow_name or "CI"
 
         # 1. Fetch run details if commit_sha missing
         if not commit_sha or not branch:
-            run_meta = self.fetch_workflow_run(run_id)
+            run_meta = self.fetch_workflow_run(run_id, repo_name=repo_name, repo_owner=repo_owner)
             commit_sha = commit_sha or run_meta.get("head_sha", "HEAD")
             branch = branch or run_meta.get("head_branch", "main")
             workflow_name = workflow_name or run_meta.get("name", "CI")
@@ -312,15 +325,15 @@ class GitHubActionsAdapter(CIAdapter):
         if not repo:
             repo = Repository(
                 name=repo_name,
-                full_name=f"{self.owner}/{repo_name}",
+                full_name=f"{repo_owner}/{repo_name}",
                 default_branch=branch or "main",
-                clone_url=f"https://github.com/{self.owner}/{repo_name}.git"
+                clone_url=f"https://github.com/{repo_owner}/{repo_name}.git"
             )
             db.add(repo)
             db.flush()
 
         # 2. Fetch and persist commit details
-        commit_data = self.fetch_commit_details(commit_sha)
+        commit_data = self.fetch_commit_details(commit_sha, repo_name=repo_name, repo_owner=repo_owner)
         existing_commit = db.query(Commit).filter_by(sha=commit_sha).first()
         if not existing_commit and "commit" in commit_data:
             c_info = commit_data.get("commit", {})
@@ -350,13 +363,13 @@ class GitHubActionsAdapter(CIAdapter):
             db.commit()
 
         # 3. Pull JUnit artifact or fallback to logs
-        test_cases = self.download_and_extract_junit_artifact(run_id)
+        test_cases = self.download_and_extract_junit_artifact(run_id, repo_name=repo_name, repo_owner=repo_owner)
         if not test_cases:
-            jobs = self.fetch_run_jobs(run_id)
+            jobs = self.fetch_run_jobs(run_id, repo_name=repo_name, repo_owner=repo_owner)
             combined_logs = ""
             for j in jobs:
                 jid = str(j.get("id"))
-                combined_logs += self.fetch_job_logs(jid) + "\n"
+                combined_logs += self.fetch_job_logs(jid, repo_name=repo_name, repo_owner=repo_owner) + "\n"
             test_cases = self.parse_failures_from_logs(combined_logs)
 
         # 4. Ingest via IngestionService

@@ -13,12 +13,21 @@ def parse_junit_xml(xml_content: str) -> List[Dict[str, Any]]:
     except ET.ParseError as e:
         return results
 
-    # Handle both <testsuites> and single <testsuite> root
-    testsuites = [root] if root.tag == "testsuite" else root.findall(".//testsuite")
-    if not testsuites and root.tag == "testsuites":
-        testsuites = root.findall("testsuite")
+    # Handle <testsuite> wrappers as well as direct <testcase> children under <testsuites>
+    testsuites = []
+    if root.tag == "testsuite":
+        testsuites = [root]
+    else:
+        testsuites = root.findall(".//testsuite")
 
-    for suite in testsuites:
+    # If testsuite elements exist, iterate through them
+    if testsuites:
+        suites_to_process = testsuites
+    else:
+        # Node.js and some other runners put <testcase> directly under <testsuites>
+        suites_to_process = [root]
+
+    for suite in suites_to_process:
         suite_name = suite.attrib.get("name", "default_suite")
         
         for case in suite.findall("testcase"):
@@ -43,8 +52,16 @@ def parse_junit_xml(xml_content: str) -> List[Dict[str, Any]]:
                 combined_log = f"{raw_msg}\n{stack}" if stack else raw_msg
 
                 sig = extract_error_signature(combined_log)
+                attr_type = target.attrib.get("type")
+                if attr_type and attr_type not in ["testCodeFailure", "testTimeoutFailure", "failure", "error"]:
+                    err_type = attr_type
+                elif sig["error_type"] != "UnknownError":
+                    err_type = sig["error_type"]
+                else:
+                    err_type = attr_type or sig["error_type"]
+
                 error_info = {
-                    "error_type": target.attrib.get("type", sig["error_type"]),
+                    "error_type": err_type,
                     "raw_message": raw_msg or sig["raw_message"],
                     "normalized_message": sig["normalized_message"],
                     "stack_trace": stack,
