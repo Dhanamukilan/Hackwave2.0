@@ -3,21 +3,27 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${SCRIPT_DIR}/../.env" ]]; then
+  # Load non-comment lines from .env
+  export $(grep -v '^#' "${SCRIPT_DIR}/../.env" | xargs)
+fi
+
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 REPO_OWNER="${GITHUB_REPO_OWNER:-}"
 REPO_NAME="${GITHUB_REPO_NAME:-}"
 WEBHOOK_URL="${WEBHOOK_URL:-http://localhost:8000/api/v1/webhooks/github}"
-WEBHOOK_SECRET="${GITHUB_WEBHOOK_SECRET:-ag004-webhook-secret-token}"
+WEBHOOK_SECRET="${GITHUB_WEBHOOK_SECRET:-ag004-secure-webhook-secret-token-key-2026}"
 
 if [[ -z "$GITHUB_TOKEN" || -z "$REPO_OWNER" || -z "$REPO_NAME" ]]; then
-  echo "Error: GITHUB_TOKEN, GITHUB_REPO_OWNER, and GITHUB_REPO_NAME must be set."
+  echo "Error: GITHUB_TOKEN, GITHUB_REPO_OWNER, and GITHUB_REPO_NAME must be set in environment or .env."
   echo "Usage: GITHUB_TOKEN=... GITHUB_REPO_OWNER=... GITHUB_REPO_NAME=... $0"
   exit 1
 fi
 
 echo "Registering webhook for https://github.com/${REPO_OWNER}/${REPO_NAME} -> ${WEBHOOK_URL}..."
 
-curl -s -X POST \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -40,6 +46,15 @@ curl -s -X POST \
   }
 }
 EOF
+)
 
-echo ""
-echo "Webhook registered successfully."
+HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+BODY=$(echo "$RESPONSE" | sed '$d')
+
+if [[ "$HTTP_STATUS" == "201" ]]; then
+  echo "Webhook registered successfully."
+elif [[ "$HTTP_STATUS" == "422" ]]; then
+  echo "Webhook already registered on repository."
+else
+  echo "Webhook registration response ($HTTP_STATUS): $BODY"
+fi

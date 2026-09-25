@@ -81,7 +81,29 @@ class IngestionService:
             self.db.add(pipeline)
             self.db.flush()
 
-        # 3. Build
+        # 3. Build (with Idempotency check)
+        existing_build = (
+            self.db.query(Build)
+            .filter_by(pipeline_id=pipeline.id, commit_sha=commit_sha)
+            .first()
+        )
+        if existing_build:
+            logger.info(f"Idempotent skip: Build {existing_build.id} already exists for pipeline {pipeline.name} and commit {commit_sha}")
+            existing_tr = self.db.query(TestRun).filter_by(build_id=existing_build.id).first()
+            existing_failures = (
+                self.db.query(Failure).filter_by(test_run_id=existing_tr.id).all()
+                if existing_tr else []
+            )
+            return {
+                "repository_id": repo.id,
+                "pipeline_id": pipeline.id,
+                "build_id": existing_build.id,
+                "test_run_id": existing_tr.id if existing_tr else None,
+                "failed_count": len(existing_failures),
+                "failures_created": [f.id for f in existing_failures],
+                "idempotent_duplicate": True
+            }
+
         last_build = (
             self.db.query(Build)
             .filter_by(pipeline_id=pipeline.id)

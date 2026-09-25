@@ -26,8 +26,15 @@ class QdrantStore:
                 f"Remote Qdrant unavailable at {settings.QDRANT_URL} ({e}). "
                 f"Falling back to embedded local storage at '{settings.QDRANT_LOCAL_PATH}'."
             )
-            os.makedirs(settings.QDRANT_LOCAL_PATH, exist_ok=True)
-            return QdrantClient(path=settings.QDRANT_LOCAL_PATH)
+            try:
+                os.makedirs(settings.QDRANT_LOCAL_PATH, exist_ok=True)
+                return QdrantClient(path=settings.QDRANT_LOCAL_PATH)
+            except Exception as local_err:
+                logger.warning(
+                    f"Local disk Qdrant failed (e.g. storage locked by concurrent process): {local_err}. "
+                    "Falling back to in-memory QdrantClient(':memory:')."
+                )
+                return QdrantClient(":memory:")
 
     def _ensure_collection(self):
         try:
