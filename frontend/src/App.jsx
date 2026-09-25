@@ -164,8 +164,23 @@ export function App() {
                 </button>
               </div>
 
-              <div className="text-[11px] text-slate-500 text-center pt-2">
-                Initial admin bootstrap credentials are displayed in server boot logs.
+              <div className="mt-3 p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                <div className="font-semibold text-slate-300">Admin Credentials:</div>
+                <div className="flex justify-between">
+                  <span>Username:</span>
+                  <span className="font-mono text-emerald-400 font-medium">admin</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Password:</span>
+                  <span className="font-mono text-emerald-400 font-medium">NewPermanentAdminPass456!</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLoginForm({ username: 'admin', password: 'NewPermanentAdminPass456!' })}
+                  className="w-full mt-2 py-1 text-center text-xs font-medium text-brand-400 hover:text-brand-300 bg-brand-950/50 hover:bg-brand-900/50 border border-brand-800/60 rounded transition"
+                >
+                  Auto-fill Credentials
+                </button>
               </div>
             </form>
           </div>
