@@ -180,14 +180,16 @@ class FailureClassifier:
             probs = self.model.predict_proba(row)[0]
             
             # Hybrid prior blending based on explicit domain keywords
+            if feat_dict.get("is_flaky_text", 0.0) > 0.5 or test_flakiness_score >= 0.4:
+                pred_label = FailureClassification.FLAKY_TEST
+                conf = max(float(probs[CLASSES.index(FailureClassification.FLAKY_TEST.value)]), 0.91)
+                reg_prob = 0.12
+                return pred_label, conf, reg_prob
+
             if feat_dict.get("is_assertion", 0.0) > 0.5:
-                if test_flakiness_score >= 0.4:
-                    pred_label = FailureClassification.FLAKY_TEST
-                    conf = max(float(probs[CLASSES.index(FailureClassification.FLAKY_TEST.value)]), 0.85)
-                else:
-                    pred_label = FailureClassification.REGRESSION
-                    conf = max(float(probs[CLASSES.index(FailureClassification.REGRESSION.value)]), 0.90)
-                reg_prob = 0.88 if pred_label == FailureClassification.REGRESSION else 0.15
+                pred_label = FailureClassification.REGRESSION
+                conf = max(float(probs[CLASSES.index(FailureClassification.REGRESSION.value)]), 0.90)
+                reg_prob = 0.88
                 return pred_label, conf, reg_prob
 
             if feat_dict.get("is_network", 0.0) > 0.5:
