@@ -11,7 +11,7 @@ from ingestion.base_adapter import CIAdapter
 from ingestion.log_normalizer.junit_parser import parse_junit_xml
 from ingestion.log_normalizer.normalizer import extract_error_signature
 from backend.app.core.config import settings
-from backend.app.models import Commit, ChangedFile, Failure, Investigation
+from backend.app.models import Commit, ChangedFile, Failure, Investigation, Repository
 from backend.app.services.ingestion_service import IngestionService
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,20 @@ class GitHubActionsAdapter(CIAdapter):
         }
         if self.token:
             self.headers["Authorization"] = f"Bearer {self.token}"
+
+    def fetch_workflow_runs(self, per_page: int = 10) -> List[Dict[str, Any]]:
+        """Fetches recent workflow runs from GitHub Actions REST API."""
+        url = f"{self.base_url}/actions/runs?per_page={per_page}"
+        if not self.token:
+            return []
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                res = client.get(url, headers=self.headers)
+                res.raise_for_status()
+                return res.json().get("workflow_runs", [])
+        except Exception as e:
+            logger.error(f"GitHub API error fetching workflow runs: {e}")
+            return []
 
     def fetch_workflow_run(self, run_id: str) -> Dict[str, Any]:
         """Fetches workflow run metadata from GitHub Actions REST API."""
@@ -293,6 +307,18 @@ class GitHubActionsAdapter(CIAdapter):
             branch = branch or run_meta.get("head_branch", "main")
             workflow_name = workflow_name or run_meta.get("name", "CI")
 
+        # Ensure repository exists
+        repo = db.query(Repository).filter_by(name=repo_name).first()
+        if not repo:
+            repo = Repository(
+                name=repo_name,
+                full_name=f"{self.owner}/{repo_name}",
+                default_branch=branch or "main",
+                clone_url=f"https://github.com/{self.owner}/{repo_name}.git"
+            )
+            db.add(repo)
+            db.flush()
+
         # 2. Fetch and persist commit details
         commit_data = self.fetch_commit_details(commit_sha)
         existing_commit = db.query(Commit).filter_by(sha=commit_sha).first()
@@ -300,6 +326,7 @@ class GitHubActionsAdapter(CIAdapter):
             c_info = commit_data.get("commit", {})
             author_info = c_info.get("author", {})
             new_commit = Commit(
+                repository_id=repo.id,
                 sha=commit_sha,
                 author_name=author_info.get("name", "Unknown"),
                 author_email=author_info.get("email", "unknown@example.com"),
@@ -312,12 +339,12 @@ class GitHubActionsAdapter(CIAdapter):
 
             for f in commit_data.get("files", []):
                 changed = ChangedFile(
-                    commit_sha=commit_sha,
+                    commit_id=new_commit.id,
                     file_path=f.get("filename", "unknown"),
                     change_type=f.get("status", "modified"),
                     additions=f.get("additions", 0),
                     deletions=f.get("deletions", 0),
-                    patch=f.get("patch", "")
+                    patch_summary=f.get("patch", "")
                 )
                 db.add(changed)
             db.commit()

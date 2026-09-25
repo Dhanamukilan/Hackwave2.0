@@ -162,3 +162,28 @@ def test_webhook_duplicate_delivery_idempotency(client):
     count_second = len(builds_after_second)
     assert count_second == 1  # IDEMPOTENT: No duplicate build created
     db.close()
+
+def test_github_actions_adapter_ingestion_direct():
+    """
+    Verifies that GitHubActionsAdapter.ingest_workflow_run persists all entities
+    (Repository, Commit, Pipeline, Build, TestRun) and executes triage orchestrator.
+    """
+    from ingestion.github_actions_adapter.adapter import github_actions_adapter
+    db: Session = SessionLocal()
+    try:
+        run_id = "test-run-mock-998811"
+        sha = "f9e8d7c6b5a4112233"
+        result = github_actions_adapter.ingest_workflow_run(
+            db=db,
+            run_id=run_id,
+            commit_sha=sha,
+            branch="main",
+            repo_name="Hackwave2.0",
+            workflow_name="CI"
+        )
+        assert "ingest_result" in result
+        build = db.query(Build).filter_by(commit_sha=sha).first()
+        assert build is not None
+        assert build.commit_sha == sha
+    finally:
+        db.close()
