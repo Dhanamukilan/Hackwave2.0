@@ -46,6 +46,7 @@ class FailureClassifier:
             ("AssertionError", "Expected 200 got 500 in test_order", "assert res.code == 200", 0.1, 10, 0.1, 0.0, 1, FailureClassification.REGRESSION.value),
             ("AssertionError", "Expected true got false", "assert user.is_active is True", 0.05, 5, 0.2, 0.0, 1, FailureClassification.REGRESSION.value),
             ("AssertionError", "assert 401 == 403 in test_auth", "assert response.status_code == 403", 0.1, 8, 0.1, 0.0, 1, FailureClassification.REGRESSION.value),
+            ("PytestAssertionFailure", "assert response.status_code == 200", "assert 500 == 200", 0.1, 10, 0.15, 0.0, 2, FailureClassification.REGRESSION.value),
             ("KeyError", "KeyError: 'customer_id' not found in payload", "data['customer_id']", 0.1, 20, 0.05, 0.0, 1, FailureClassification.REGRESSION.value),
             ("ValueError", "ValueError: invalid literal for int() with base 10: 'abc'", "int(order_id)", 0.2, 15, 0.05, 0.0, 1, FailureClassification.REGRESSION.value),
             ("IndexError", "IndexError: list index out of range", "items[0]", 0.05, 12, 0.08, 0.0, 1, FailureClassification.REGRESSION.value),
@@ -58,6 +59,7 @@ class FailureClassifier:
 
             # INFRASTRUCTURE (OOM, disk full, runner crash, docker daemon death)
             ("RunnerDiedError", "out of memory runner agent terminated OOMKiller", "runner killed by SIGKILL", 12.0, 5, 0.1, 0.0, 12, FailureClassification.INFRASTRUCTURE.value),
+            ("ProcessKilledError", "Process killed by OOMKiller (exit code 137)", "OOMKiller signal 9", 10.0, 4, 0.1, 0.0, 6, FailureClassification.INFRASTRUCTURE.value),
             ("DiskFullError", "No space left on device while writing cache", "write error /tmp/cache", 3.0, 3, 0.1, 0.0, 8, FailureClassification.INFRASTRUCTURE.value),
             ("DockerError", "Cannot connect to the Docker daemon at unix:///var/run/docker.sock", "docker build", 0.5, 2, 0.5, 0.0, 10, FailureClassification.INFRASTRUCTURE.value),
 
@@ -73,6 +75,8 @@ class FailureClassifier:
 
             # NETWORK (Connection refused, socket timeouts, DNS resolution failure)
             ("ConnectionRefusedError", "Connection refused 127.0.0.1:5432", "connect() to postgres failed", 2.0, 8, 0.2, 0.0, 6, FailureClassification.NETWORK.value),
+            ("ConnectionError", "Failed to connect to api.stripe.com:443", "requests.exceptions.ConnectionError: HTTPSConnectionPool(host='api.stripe.com', port=443): Max retries exceeded", 4.0, 10, 0.2, 0.0, 5, FailureClassification.NETWORK.value),
+            ("ConnectionError", "ConnectionError: HTTPSConnectionPool host api.stripe.com", "requests.post(stripe_url)", 3.0, 6, 0.15, 0.0, 3, FailureClassification.NETWORK.value),
             ("HTTPError", "503 Service Unavailable connecting to auth-gateway", "requests.get(auth_url)", 3.5, 12, 0.15, 0.0, 4, FailureClassification.NETWORK.value),
             ("SocketTimeout", "The read operation timed out connecting to redis-master:6379", "socket.connect()", 10.0, 15, 0.1, 0.0, 5, FailureClassification.NETWORK.value),
 
@@ -83,6 +87,7 @@ class FailureClassifier:
             # BUILD_FAILURE (Syntax error, compilation error, linter failure)
             ("SyntaxError", "invalid syntax in main.py line 4", "def test(x", 0.01, 1, 1.0, 0.0, 2, FailureClassification.BUILD_FAILURE.value),
             ("CompileError", "cannot find symbol: class TransactionManager", "javac failed", 1.5, 1, 1.0, 0.0, 3, FailureClassification.BUILD_FAILURE.value),
+            ("BuildFailure", "TypeScript compilation error: Cannot find module", "tsc compile error", 1.0, 2, 1.0, 0.0, 3, FailureClassification.BUILD_FAILURE.value),
             ("TypeScriptError", "Type 'string' is not assignable to type 'number'", "tsc build failed", 0.8, 1, 1.0, 0.0, 4, FailureClassification.BUILD_FAILURE.value),
 
             # TEST_DATA (Integrity constraints, DB fixture missing)

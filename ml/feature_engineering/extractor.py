@@ -3,14 +3,14 @@ from typing import Dict, Any, List
 import numpy as np
 
 KEYWORD_FLAGS = {
-    "is_assertion": re.compile(r"(?i)\b(assert|assertionerror|expected|got|mismatch)\b"),
-    "is_timeout": re.compile(r"(?i)\b(timeout|timed out|deadline exceeded)\b"),
-    "is_network": re.compile(r"(?i)\b(connection refused|econnreset|ehostunreach|getaddrinfo|network is unreachable|socket)\b"),
-    "is_infra": re.compile(r"(?i)\b(oomkiller|out of memory|no space left on device|disk full|runner lost|agent died)\b"),
-    "is_env": re.compile(r"(?i)\b(env var|missing environment|not found in path|permission denied|chmod|libc)\b"),
-    "is_dependency": re.compile(r"(?i)\b(modulenotfounderror|importerror|package not found|could not find a version that satisfies|npm err)\b"),
-    "is_build": re.compile(r"(?i)\b(syntaxerror|compilation error|build failed|typeerror: cannot read|cannot find symbol)\b"),
-    "is_test_data": re.compile(r"(?i)\b(fixture not found|foreign key constraint|integrityerror|duplicate key|database is locked)\b"),
+    "is_assertion": re.compile(r"(?i)\b(assert|assertionerror|assertionfailure|pytestassertionfailure|expected|got|mismatch)\b"),
+    "is_timeout": re.compile(r"(?i)\b(timeout|timed out|deadline exceeded|timeoutexception)\b"),
+    "is_network": re.compile(r"(?i)\b(connection\s*error|connection\s*refused|failed to connect|max retries exceeded|econnreset|ehostunreach|getaddrinfo|network is unreachable|socket|http\s*error|503\b|502\b|504\b|remotedisconnected)\b"),
+    "is_infra": re.compile(r"(?i)\b(oomkiller|out of memory|no space left on device|disk full|runner lost|agent died|runnerdiederror|memoryerror)\b"),
+    "is_env": re.compile(r"(?i)\b(env var|missing environment|not found in path|permission denied|chmod|libc|environmenterror)\b"),
+    "is_dependency": re.compile(r"(?i)\b(modulenotfounderror|importerror|package not found|could not find a version that satisfies|npm err|packagenotfounderror)\b"),
+    "is_build": re.compile(r"(?i)\b(syntaxerror|compilation error|build failed|typeerror: cannot read|cannot find symbol|buildfailure|compileerror|typescripterror)\b"),
+    "is_test_data": re.compile(r"(?i)\b(fixture not found|foreign key constraint|integrityerror|duplicate key|database is locked|dataerror)\b"),
 }
 
 def extract_failure_features(

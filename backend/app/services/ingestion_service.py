@@ -10,6 +10,9 @@ from backend.app.models import (
 )
 from ingestion.log_normalizer.normalizer import extract_error_signature, generate_fingerprint
 from database.vector_store.qdrant_client import vector_store
+from ml.classification.classifier import failure_classifier
+from ml.flaky_prediction.predictor import flaky_predictor
+from backend.app.services.severity_engine import severity_engine
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +205,65 @@ class IngestionService:
                     fingerprint.occurrence_count += 1
                     fingerprint.last_seen_at = datetime.now(timezone.utc)
 
-                # Create Failure record
+                # ----- ML Inference: Classify this failure -----
+                classification, cls_confidence, reg_prob = failure_classifier.classify(
+                    raw_message=err.get("raw_message", ""),
+                    normalized_message=norm_msg,
+                    raw_stack_trace=err.get("stack_trace", ""),
+                    error_type=error_type,
+                    duration_seconds=float(tc.get("duration_seconds", 0.0)),
+                    test_run_count=test.run_count,
+                    test_failure_rate=test.failure_rate,
+                    test_flakiness_score=test.flakiness_score,
+                    occurrence_count=fingerprint.occurrence_count
+                )
+                logger.info(
+                    f"Classified failure for {test_name}: {classification.value} "
+                    f"(confidence={cls_confidence:.2f}, regression_prob={reg_prob:.2f})"
+                )
+
+                # ----- ML Inference: Flaky prediction -----
+                # Build a minimal run history from existing failures for this test
+                prior_failures = (
+                    self.db.query(Failure)
+                    .filter_by(test_id=test.id)
+                    .order_by(Failure.created_at.asc())
+                    .limit(50)
+                    .all()
+                )
+                run_history = []
+                for pf in prior_failures:
+                    run_history.append({
+                        "status": "FAILED",
+                        "duration_seconds": 0.0,
+                    })
+                # Add passing runs to represent the full history
+                passing_runs = max(0, test.run_count - len(prior_failures))
+                for _ in range(passing_runs):
+                    run_history.insert(0, {"status": "PASSED", "duration_seconds": 0.0})
+
+                is_flaky, flaky_score, flaky_feats = flaky_predictor.predict_flakiness(
+                    run_history=run_history,
+                    test_age_days=30.0
+                )
+                logger.info(
+                    f"Flaky prediction for {test_name}: is_flaky={is_flaky}, "
+                    f"score={flaky_score:.3f}, features={flaky_feats}"
+                )
+
+                # Update test-level flakiness score
+                test.flakiness_score = flaky_score
+
+                # ----- Severity calculation -----
+                branch_name = branch or "main"
+                severity = severity_engine.calculate_severity(
+                    classification=classification,
+                    branch=branch_name,
+                    test_file_path=file_path,
+                    regression_prob=reg_prob
+                )
+
+                # Create Failure record with REAL model outputs
                 failure = Failure(
                     test_run_id=test_run.id,
                     test_id=test.id,
@@ -212,11 +273,11 @@ class IngestionService:
                     normalized_message=norm_msg,
                     raw_stack_trace=err.get("stack_trace", ""),
                     normalized_stack_trace=err.get("normalized_stack_trace", ""),
-                    classification=FailureClassification.UNKNOWN,
-                    classification_confidence=0.5,
-                    flakiness_score=test.flakiness_score,
-                    regression_prob=0.5,
-                    severity=SeverityLevel.NORMAL,
+                    classification=classification,
+                    classification_confidence=cls_confidence,
+                    flakiness_score=flaky_score,
+                    regression_prob=reg_prob,
+                    severity=severity,
                     created_at=datetime.now(timezone.utc)
                 )
                 self.db.add(failure)

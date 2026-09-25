@@ -81,8 +81,10 @@ class TriageOrchestrator:
         if owner_data.get("status") == "success":
             bundle.add_item("COMPONENT_OWNER", "Config:components_map", f"Ownership record for component {comp_id}", owner_data)
 
-        # 6. Vector Similarity Agent (Qdrant)
-        search_vec = [0.05] * 384
+        # 6. Vector Similarity Agent (Qdrant) — use real failure embedding
+        from backend.app.services.ingestion_service import generate_dense_embedding
+        search_text = f"{failure.error_type} {failure.normalized_message or ''} {failure.raw_stack_trace or ''}"
+        search_vec = generate_dense_embedding(search_text)
         similar_data = self.tools.search_similar_failures(search_vec)
         if similar_data.get("status") == "success":
             bundle.add_item("SIMILAR_FAILURES", "Qdrant:failure_embeddings", "Semantically similar historical failures", similar_data)
@@ -119,11 +121,41 @@ class TriageOrchestrator:
         )
 
         if not llm_response:
-            # Deterministic RCA explanation
+            # Deterministic per-failure RCA explanation (unique to each failure)
+            test_path = test.file_path if test else "unknown"
+            h1_result = next((h for h in hypotheses_matrix if h["hypothesis_id"] == winning_hyp), {})
+            supporting_ids = h1_result.get("supporting_evidence_ids", [])
+            contradicting_ids = h1_result.get("contradicting_evidence_ids", [])
+
+            # Build a description of what other hypotheses found
+            other_hyps_summary = []
+            for h in hypotheses_matrix:
+                if h["hypothesis_id"] != winning_hyp and h["status"] != "REFUTED":
+                    other_hyps_summary.append(
+                        f"{h['hypothesis_id']} ({h['title']}): {h['status']} "
+                        f"(score={h['score']}, evidence={h['supporting_evidence_ids'] or 'none'})"
+                    )
+
             llm_response = (
-                f"Root Cause Analysis concluded with {confidence_str} confidence. "
-                f"Hypothesis {winning_hyp} is confirmed based on evidence items {eval_result['hypotheses_matrix'][0]['supporting_evidence_ids']}. "
-                f"The failure '{failure.error_type}' correlates directly with the gathered evidence."
+                f"## Root Cause Analysis: {failure.error_type} in `{test_path}`\n\n"
+                f"**Failure Message:** {(failure.normalized_message or failure.raw_message or 'N/A')[:200]}\n\n"
+                f"**Classification:** {failure.classification.value} "
+                f"(confidence: {failure.classification_confidence:.0%})\n\n"
+                f"**Winning Hypothesis:** {winning_hyp} — {h1_result.get('title', 'Unknown')} "
+                f"(confidence: {confidence_str})\n\n"
+                f"**Supporting Evidence:** {supporting_ids if supporting_ids else 'No direct supporting evidence gathered'}\n\n"
+                f"**Contradicting Evidence:** {contradicting_ids if contradicting_ids else 'None'}\n\n"
+            )
+            if other_hyps_summary:
+                llm_response += "**Alternative Hypotheses Considered:**\n"
+                for ohs in other_hyps_summary:
+                    llm_response += f"- {ohs}\n"
+                llm_response += "\n"
+
+            llm_response += (
+                f"**Commit:** {commit_sha[:8]}\n\n"
+                f"**Evidence Items Gathered:** {len(bundle_dict.get('evidence_items', []))} "
+                f"({', '.join(bundle_dict.get('valid_evidence_ids', []))})\n"
             )
 
         # 10. Record Investigation in DB

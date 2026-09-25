@@ -35,7 +35,11 @@ class EvidenceBundle:
         self._id_counter = 1
 
     def add_item(self, evidence_type: str, source: str, summary: str, data: Any) -> str:
-        evidence_id = f"EV-{evidence_type[:4].upper()}-{self._id_counter:02d}"
+        # Strip non-alpha chars from type tag to prevent malformed IDs like "EV-GIT_-05"
+        clean_tag = "".join(c for c in evidence_type[:4].upper() if c.isalpha())
+        if len(clean_tag) < 2:
+            clean_tag = "EVID"
+        evidence_id = f"EV-{clean_tag}-{self._id_counter:02d}"
         self._id_counter += 1
         item = EvidenceItem(
             evidence_id=evidence_id,

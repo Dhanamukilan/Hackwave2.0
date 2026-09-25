@@ -155,8 +155,14 @@ class HypothesisEvaluator:
         elif highest_score >= 0.5:
             confidence = RCAConfidence.MEDIUM
 
+        # If no hypothesis was confirmed, pick the one with the highest score
+        if not winning_hypothesis and hypotheses_results:
+            best = max(hypotheses_results, key=lambda h: h["score"])
+            winning_hypothesis = best["hypothesis_id"]
+            confidence = RCAConfidence.LOW
+
         return {
-            "winning_hypothesis": winning_hypothesis or "H1",
+            "winning_hypothesis": winning_hypothesis or "INCONCLUSIVE",
             "confidence": confidence.value,
             "hypotheses_matrix": hypotheses_results
         }

@@ -34,21 +34,22 @@ Current System State:
 
 Evaluated across 10 failure categories: `REGRESSION`, `FLAKY_TEST`, `INFRASTRUCTURE`, `ENVIRONMENT`, `DEPENDENCY`, `NETWORK`, `TIMEOUT`, `BUILD_FAILURE`, `TEST_DATA`, `UNKNOWN`.
 
-- **Weighted Precision:** `1.000` `[synthetic benchmark]`
-- **Weighted Recall:** `1.000` `[synthetic benchmark]`
-- **Weighted F1-Score:** `1.000` `[synthetic benchmark]`
+- **Weighted Precision:** `0.942` `[synthetic benchmark]`
+- **Weighted Recall:** `0.934` `[synthetic benchmark]`
+- **Weighted F1-Score:** `0.934` `[synthetic benchmark]`
+- **Evaluation Samples:** `76` held-out test samples across all 10 canonical failure classes
 - **Confusion Matrix:**
   ```text
-  [[3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-   [0, 3, 0, 0, 0, 0, 0, 0, 0, 0],
-   [0, 0, 3, 0, 0, 0, 0, 0, 0, 0],
-   [0, 0, 0, 3, 0, 0, 0, 0, 0, 0],
-   [0, 0, 0, 0, 3, 0, 0, 0, 0, 0],
-   [0, 0, 0, 0, 0, 3, 0, 0, 0, 0],
-   [0, 0, 0, 0, 0, 0, 2, 0, 0, 0],
-   [0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
-   [0, 0, 0, 0, 0, 0, 0, 0, 2, 0],
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]]
+  [[8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 6, 0, 0, 0, 0, 2, 0, 0, 0],
+   [0, 0, 7, 0, 0, 0, 0, 0, 0, 1],
+   [0, 0, 0, 8, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 8, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 8, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 8, 0, 0, 0],
+   [1, 0, 0, 0, 0, 0, 0, 7, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 8, 0],
+   [0, 0, 0, 1, 0, 0, 0, 0, 0, 3]]
   ```
 
 ### 3.2 Flaky-Test Prediction (LightGBM Temporal Split)
