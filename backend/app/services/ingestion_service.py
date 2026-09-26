@@ -54,7 +54,8 @@ class IngestionService:
         test_case_records: List[Dict[str, Any]],
         runner_os: str = "ubuntu-latest",
         runner_version: str = "22.04",
-        provider: str = "github_actions"
+        provider: str = "github_actions",
+        allow_rerun: bool = True
     ) -> Dict[str, Any]:
         """
         Processes a full batch of executed test cases for a build run,
@@ -86,13 +87,14 @@ class IngestionService:
             self.db.flush()
 
         # 3. Build (with Idempotency check)
-        existing_build = (
-            self.db.query(Build)
-            .filter_by(pipeline_id=pipeline.id, commit_sha=commit_sha)
-            .first()
-        )
-        if existing_build:
-            logger.info(f"Idempotent skip: Build {existing_build.id} already exists for pipeline {pipeline.name} and commit {commit_sha}")
+        if not allow_rerun:
+            existing_build = (
+                self.db.query(Build)
+                .filter_by(pipeline_id=pipeline.id, commit_sha=commit_sha)
+                .first()
+            )
+            if existing_build:
+                logger.info(f"Idempotent skip: Build {existing_build.id} already exists for pipeline {pipeline.name} and commit {commit_sha}")
             existing_tr = self.db.query(TestRun).filter_by(build_id=existing_build.id).first()
             existing_failures = (
                 self.db.query(Failure).filter_by(test_run_id=existing_tr.id).all()

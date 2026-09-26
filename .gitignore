@@ -23,6 +23,22 @@ ml/models_store/*.bin
 
 # DB
 *.sqlite3
+*.db
+
+# Binaries & large tools
+*.exe
+cloudflared.exe
+
+# Scratch & inspection scripts
+check_*.py
+inspect_*.py
+track_*.py
+trigger_*.py
+update_*.py
+test_tunnel_*.py
+sync_*.py
+scratch/
 
 # OS
 .DS_Store
+

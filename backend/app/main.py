@@ -178,6 +178,17 @@ app.include_router(ml_router, prefix=settings.API_V1_PREFIX)
 app.include_router(webhooks_router, prefix=settings.API_V1_PREFIX)
 app.include_router(audit_router, prefix=settings.API_V1_PREFIX)
 
+@app.get("/", tags=["Root"])
+def root_info():
+    return {
+        "status": "online",
+        "service": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "webhook_endpoint": f"{settings.API_V1_PREFIX}/webhooks/github",
+        "docs_url": "/docs",
+        "ui_dashboard_url": "http://localhost:5173"
+    }
+
 @app.get("/health", tags=["Health"])
 def health_check():
     return {
@@ -186,3 +197,4 @@ def health_check():
         "version": settings.VERSION,
         "environment": settings.ENV,
     }
+
